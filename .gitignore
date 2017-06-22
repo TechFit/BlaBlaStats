@@ -9,3 +9,6 @@ runtime/*
 web/assets/*
 !web/assets/.gitkeep
 config/common.local.php
+vendor/*
+composer.lock
+config/db.php
