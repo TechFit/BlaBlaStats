@@ -42,9 +42,14 @@ class MapController extends Controller
             $listOfCitiesAndCountries = [];
 
             for ($i = 1; $i < count($countOfCountries); $i++) {
-                    $parsedData = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.top-departure > div.margin-top.margin-bottom.clearfix:nth-child(' . ($i) . ') h2');
-                    $country = pq($parsedData)->html();
-                var_dump($country);
+                    $parsedDataCountries = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.top-departure > div.margin-top.margin-bottom.clearfix:nth-child(' . ($i) . ') h2');
+                    $i += 1;
+                    $country = pq($parsedDataCountries)->html();
+                    var_dump($country);
+                    $parsedDataCities = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.top-departure > div:nth-child(' . $i . ') > div:nth-child(1) > ul > li > a');
+                    $prepareCity[] = explode('Попутники з ', pq($parsedDataCities)->html());
+                    $city = array_map('trim', $prepareCity[0]);
+                    var_dump($prepareCity);
                 }
 //                $parsedData[][] = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.top-departure > div:nth-child(' . $i . ') > div:nth-child(1) > ul > li > a');
             }
