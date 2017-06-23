@@ -21,9 +21,9 @@ use yii\httpclient\Client;
 class MapController extends Controller
 {
     /**
-     * Get list of countries
+     * Get countries and cities
      */
-    public function actionCountries()
+    public function actionCities()
     {
         $client = new Client();
         $response = $client->createRequest()
@@ -36,23 +36,28 @@ class MapController extends Controller
             ->send();
         if ($response->isOk) {
             $startParser = phpQuery::newDocument($response);
-            $data = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.row > div > ul  li  a');
-            $countries = [];
-            $countriesModel = new Countries();
-            foreach ($data as $item) {
-                $countries[] = pq($item)->html();
-                $countriesModel->country_title = pq($item)->html();
-                $countriesModel->insert();
-            }
-            var_dump($countries);
-        }
-    }
+            $countOfCountries = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.top-departure > div.margin-top.margin-bottom.clearfix');
+            $parsedObjectCountries = [];
+            $parsedObjectCities = [];
+            $listOfCitiesAndCountries = [];
 
-    /**
-     * Get list of cities
-     */
-    public function actionCities()
-    {
+            for ($i = 1; $i < count($countOfCountries); $i++) {
+                    $parsedData = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.top-departure > div.margin-top.margin-bottom.clearfix:nth-child(' . ($i) . ') h2');
+                    $country = pq($parsedData)->html();
+                var_dump($country);
+                }
+//                $parsedData[][] = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.top-departure > div:nth-child(' . $i . ') > div:nth-child(1) > ul > li > a');
+            }
+//
+//
+//            foreach ($parsedData as $item) {
+//                $dataFromList[] = pq($item)->html();
+//                foreach ($dataFromList as $city) {
+//                    $getCity = explode('Попутники з ', $city);
+//                    $cities[] = trim($getCity[1]);
+//                }
+//            }
+//            var_dump($country);
 
     }
 
