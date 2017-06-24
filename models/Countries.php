@@ -9,6 +9,7 @@ use Yii;
  *
  * @property integer $id
  * @property string $country_title
+ * @property string $code
  */
 class Countries extends \yii\db\ActiveRecord
 {
@@ -27,6 +28,7 @@ class Countries extends \yii\db\ActiveRecord
     {
         return [
             [[ 'country_title'], 'string', 'max' => 255],
+            [[ 'code'], 'string', 'max' => 255],
         ];
     }
 
@@ -38,6 +40,7 @@ class Countries extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'country_title' => 'Country Title',
+            'code' => 'Code',
         ];
     }
 }
