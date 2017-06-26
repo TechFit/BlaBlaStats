@@ -73,7 +73,7 @@ class MapController extends Controller
                 $countryTitle = pq($item)->html();
                 $countryCode = pq($item)->attr('id');
                 // Сохраняю города в БД
-                self::actionAddCountryManually($countryCode, $countryTitle);
+                self::actionAddCountryManually($countryTitle, $countryCode);
             }
         }
 
@@ -148,7 +148,34 @@ class MapController extends Controller
      */
     public function actionRoadTable()
     {
+        $commandStartTime = new \DateTime('now');
 
+        $client = new Client();
+
+        $citiesListFromDb = Cities::find()->asArray()->all();
+
+//        foreach ($citiesListFromDb as $city) {
+            $response = $client->createRequest()
+                ->setMethod('GET')
+                ->setUrl('https://public-api.blablacar.com/api/v2/trips?key=e94c9b2fb5be461c9b6dd00bb944a799&fn=Київ&tn=Шпола&locale=ru_RU&cur=UAH
+                    ')
+                ->addHeaders([
+                    'user-agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.110 Safari/537.36',
+                    'Content-Type: text/html; charset=utf-8',
+                    "accept: application/json"
+                ])
+                ->send();
+
+            echo $response->getStatusCode() . "\n";
+            if ($response->isOk) {
+                var_dump($response->getData());
+            }
+//        }
+
+        $commandEndTime = new \DateTime('now');
+        $timeOfWork = $commandEndTime->getTimestamp() - $commandStartTime->getTimestamp();
+        echo "Create Road Table Job done " . $timeOfWork . "\n";
+        return 0;
     }
 
 }
