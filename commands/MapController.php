@@ -9,6 +9,7 @@ namespace app\commands;
 
 use app\models\Cities;
 use app\models\Countries;
+use app\models\Trips;
 use Yii;
 use phpQuery;
 use yii\console\Controller;
@@ -154,23 +155,52 @@ class MapController extends Controller
 
         $citiesListFromDb = Cities::find()->asArray()->all();
 
-//        foreach ($citiesListFromDb as $city) {
-            $response = $client->createRequest()
-                ->setMethod('GET')
-                ->setUrl('https://public-api.blablacar.com/api/v2/trips?key=e94c9b2fb5be461c9b6dd00bb944a799&fn=Київ&tn=Шпола&locale=ru_RU&cur=UAH
+        foreach ($citiesListFromDb as $fromCity) {
+            unset($citiesListFromDb[$fromCity['city_title']]);
+            foreach ($citiesListFromDb as $toCity) {
+                echo 'С ' . $fromCity['city_title'] . ' В ' . $toCity['city_title'] . "\n";
+                $response = $client->createRequest()
+                    ->setMethod('GET')
+                    ->setUrl('https://public-api.blablacar.com/api/v2/trips?
                     ')
-                ->addHeaders([
-                    'user-agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.110 Safari/537.36',
-                    'Content-Type: text/html; charset=utf-8',
-                    "accept: application/json"
-                ])
-                ->send();
+                    ->setHeaders([
+                        "accept: application/json",
+                    ])
+                    ->setData([
+                        'key' => 'e94c9b2fb5be461c9b6dd00bb944a799',
+                        'fn' => $fromCity['city_title'],
+                        'tn' => $toCity['city_title'],
+                        'locale' => 'ru_RU',
+                        'cur' => 'UAH',
+                        'radius' => 1,
+                    ])
+                    ->send();
 
-            echo $response->getStatusCode() . "\n";
-            if ($response->isOk) {
-                var_dump($response->getData());
+                if ($response->isOk) {
+                    $trip = $response->getData();
+                    $listOfPrice = [];
+                    $totalTrips = count($trip['trips']);
+
+                    if (!empty($trip['trips'])) {
+                        foreach ($trip['trips'] as $trip) {
+                            $listOfPrice[] = $trip['price_without_commission']['value'];
+                        }
+                        $minPrice = min($listOfPrice) . "\n";
+                        $averagePrice = floor(array_sum($listOfPrice) / $totalTrips) . "\n";
+                        $maxPrice = max($listOfPrice) . "\n";
+                        $trip = new Trips();
+                        $trip->fn = $fromCity['city_title'];
+                        $trip->tn = $toCity['city_title'];
+                        $trip->fn_country_id = $fromCity['country_id'];
+                        $trip->tn_country_id = $toCity['country_id'];
+                        $trip->min_price = $minPrice;
+                        $trip->average_price = $averagePrice;
+                        $trip->max_price = $maxPrice;
+                        $trip->save();
+                    }
+                }
             }
-//        }
+        }
 
         $commandEndTime = new \DateTime('now');
         $timeOfWork = $commandEndTime->getTimestamp() - $commandStartTime->getTimestamp();
