@@ -44,6 +44,72 @@ class MapController extends Controller
     }
 
     /**
+     * @param $url
+     * @param $countryTitle
+     * @return int
+     *
+     * Manually adding Cities
+     */
+    public function actionAddCitiesManually($url, $countryTitle)
+    {
+        $commandStartTime = new \DateTime('now');
+        $client = new Client();
+        $response = $client->createRequest()
+            ->setMethod('GET')
+            ->setUrl($url)
+            ->addHeaders([
+                'user-agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.110 Safari/537.36',
+                'Content-Type: text/html; charset=utf-8'
+            ])
+            ->send();
+        if ($response->isOk) {
+            $startParser = phpQuery::newDocument($response);
+            // Получаю блоки с странами и городами
+            $parsedObject = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.top-departure > div');
+            $counterForCities = 0;
+            for ($i = 1; $i < count($parsedObject); $i++) {
+                // Получаю блок с h2 в котором название города, последовательность 1,3,5...
+                $parsedDataCountries = $startParser->find('
+                #maincontent > div.row.top-departure-index.margin-top > 
+                div > div.top-departure > div.margin-top.margin-bottom.clearfix:nth-child(' . ($i) . ') h2
+                ');
+                // Получаю текстовое название города
+                $countryCode = pq($parsedDataCountries)->attr('id');
+                // Сохраняю города в БД
+                self::actionAddCountryManually($countryCode, $countryTitle);
+                // Увеличил счетчик для получения блока с городами, последовательность 2,4,6...
+                $i += 1;
+                // Получаю массив с городами
+                $parsedDataCities = $startParser->find('
+                #maincontent > div.row.top-departure-index.margin-top > 
+                div > div.top-departure > div:nth-child(' . $i . ') > div:nth-child(1) > ul > li > a
+            ');
+                // Получаю название города убрав в строке "Попутники з"
+                $prepareCity[] = explode('Попутники з', pq($parsedDataCities)->html());
+                // Удаляю пробелы и пустые элементы массива
+                $city = array_diff(array_map('trim', $prepareCity[$counterForCities]), array(''));
+                $counterForCities++;
+                // Записываю города в БД
+                foreach ($city as $item) {
+                    $countryId = Countries::findOne(['country_title' => $countryTitle]);
+                    $cityId = Cities::findOne(['city_title' => $item]);
+                    if (!isset($cityId->id) and isset($countryId->id)) {
+                        $citiesTable = new Cities();
+                        $citiesTable->country_id = $countryId->id;
+                        $citiesTable->city_title = $item;
+                        $citiesTable->save();
+                    }
+                }
+            }
+        }
+
+        $commandEndTime = new \DateTime('now');
+        $timeOfWork = $commandEndTime->getTimestamp() - $commandStartTime->getTimestamp();
+        echo "Import Countries/Cities Job done " . $timeOfWork . "\n";
+        return 0;
+    }
+
+    /**
      * Import countries from BlaBlaCar
      * @return int
      */
@@ -91,61 +157,67 @@ class MapController extends Controller
     public function actionAddCities()
     {
         $commandStartTime = new \DateTime('now');
-
         $client = new Client();
-
-        $countriesListFromDb = Countries::find()->asArray()->all();
-
-        $alphabet = range('A', 'Z');
-
-        foreach ($countriesListFromDb as $country) {
-            foreach ($alphabet as $word) {
-                $response = $client->createRequest()
-                    ->setMethod('GET')
-                    ->setUrl('https://www.blablacar.com.ua/poshuk-poputnikiv-za-kordon/' . $country['code'] . '/' . $word)
-                    ->addHeaders([
-                        'user-agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.110 Safari/537.36',
-                        'Content-Type: text/html; charset=utf-8'
-                    ])
-                    ->send();
-
-                if ($response->isOk) {
-                    $startParser = phpQuery::newDocument($response);
-                    $parsedDataCities = $startParser->find('
-                    #maincontent > div.row.top-departure-index.margin-top > div > div > div.row div.span4 ul li a
+        $response = $client->createRequest()
+            ->setMethod('GET')
+            ->setUrl('https://www.blablacar.com.ua/poshuk-poputnikiv-za-kordon/')
+            ->addHeaders([
+                'user-agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.110 Safari/537.36',
+                'Content-Type: text/html; charset=utf-8'
+            ])
+            ->send();
+        if ($response->isOk) {
+            $startParser = phpQuery::newDocument($response);
+            // Получаю блоки с странами и городами
+            $parsedObject = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.top-departure > div');
+            $counterForCities = 0;
+            for ($i = 1; $i < count($parsedObject); $i++) {
+                // Получаю блок с h2 в котором название города, последовательность 1,3,5...
+                $parsedDataCountries = $startParser->find('
+                #maincontent > div.row.top-departure-index.margin-top > 
+                div > div.top-departure > div.margin-top.margin-bottom.clearfix:nth-child(' . ($i) . ') h2
                 ');
-                    // Получаю название города убрав в строке "Попутники з"
-                    $prepareCity[] = explode('Попутники з', pq($parsedDataCities)->html());
-                    $city = [];
-                    // Удаляю пробелы и пустые элементы массива
-                    foreach ($prepareCity as $item) {
-                        $city = array_diff(array_map('trim', $item), array(''));
-                    }
-
-                    //Записываю города в БД
-                    foreach ($city as $item) {
-                        $countryId = Countries::findOne(['country_title' => $country['country_title']]);
-                        $cityId = Cities::findOne(['city_title' => $item]);
-                        if (!isset($cityId->id) and isset($countryId->id)) {
-                            $citiesTable = new Cities();
-                            $citiesTable->country_id = $countryId->id;
-                            $citiesTable->city_title = $item;
-                            $citiesTable->save();
-                        }
+                // Получаю текстовое название города
+                $countryTitle = pq($parsedDataCountries)->html();
+                $countryCode = pq($parsedDataCountries)->attr('id');
+                // Сохраняю города в БД
+                self::actionAddCountryManually($countryCode, $countryTitle);
+                // Увеличил счетчик для получения блока с городами, последовательность 2,4,6...
+                $i += 1;
+                // Получаю массив с городами
+                $parsedDataCities = $startParser->find('
+                #maincontent > div.row.top-departure-index.margin-top > 
+                div > div.top-departure > div:nth-child(' . $i . ') > div:nth-child(1) > ul > li > a
+            ');
+                // Получаю название города убрав в строке "Попутники з"
+                $prepareCity[] = explode('Попутники з', pq($parsedDataCities)->html());
+                // Удаляю пробелы и пустые элементы массива
+                $city = array_diff(array_map('trim', $prepareCity[$counterForCities]), array(''));
+                $counterForCities++;
+                // Записываю города в БД
+                foreach ($city as $item) {
+                    $countryId = Countries::findOne(['country_title' => $countryTitle]);
+                    $cityId = Cities::findOne(['city_title' => $item]);
+                    if (!isset($cityId->id) and isset($countryId->id)) {
+                        $citiesTable = new Cities();
+                        $citiesTable->country_id = $countryId->id;
+                        $citiesTable->city_title = $item;
+                        $citiesTable->save();
                     }
                 }
             }
-            echo 'Done - ' . $country['country_title'] . "\n";
         }
 
         $commandEndTime = new \DateTime('now');
         $timeOfWork = $commandEndTime->getTimestamp() - $commandStartTime->getTimestamp();
-        echo "Import Cities Job done " . $timeOfWork . "\n";
+        echo "Import Countries/Cities Job done " . $timeOfWork . "\n";
         return 0;
     }
 
     /*
      * Get statistic between cities
+     * On 400 stopped
+     * Add a lot of users
      */
     public function actionRoadTable()
     {
@@ -154,11 +226,12 @@ class MapController extends Controller
         $client = new Client();
 
         $citiesListFromDb = Cities::find()->asArray()->all();
-
+        $i = 0;
         foreach ($citiesListFromDb as $fromCity) {
             unset($citiesListFromDb[$fromCity['city_title']]);
             foreach ($citiesListFromDb as $toCity) {
-                echo 'С ' . $fromCity['city_title'] . ' В ' . $toCity['city_title'] . "\n";
+                $i++;
+                echo 'С ' . $fromCity['city_title'] . ' В ' . $toCity['city_title'] . ' ' . $i ."\n";
                 $response = $client->createRequest()
                     ->setMethod('GET')
                     ->setUrl('https://public-api.blablacar.com/api/v2/trips?
