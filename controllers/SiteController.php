@@ -2,6 +2,8 @@
 
 namespace app\controllers;
 
+use app\models\Trips;
+use yii\data\Pagination;
 use Yii;
 use yii\web\Controller,
     yii\web\NotFoundHttpException;
@@ -52,10 +54,23 @@ class SiteController extends Controller
         ];
     }
 
+    /**
+     * @return string
+     *
+     * Main page
+     */
     public function actionIndex()
     {
-        return $this->render('index', [
+        $tripQuery = Trips::find();
+        $countTrips = clone $tripQuery;
+        $tripPages = new Pagination(['totalCount' => $countTrips->count()]);
+        $tripList = $tripQuery->offset($tripPages->offset)
+            ->limit($tripPages->limit)
+            ->all();
 
+        return $this->render('index', [
+            'tripList' => $tripList,
+            'tripPages' => $tripPages,
         ]);
     }
 }

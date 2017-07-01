@@ -23,6 +23,10 @@ use yii\httpclient\Client;
 class MapController extends Controller
 {
     /**
+     * @param $title string
+     * @param $code  integer
+     * @return int
+     *
      * Manually adding country
      */
     public function actionAddCountryManually($title, $code)
@@ -44,68 +48,23 @@ class MapController extends Controller
     }
 
     /**
-     * @param $url
-     * @param $countryTitle
+     * @param $cityTitle    string
+     * @param $countryTitle string
      * @return int
      *
      * Manually adding Cities
      */
-    public function actionAddCitiesManually($url, $countryTitle)
+    public function actionAddCitiesManually($cityTitle, $countryTitle)
     {
-        $commandStartTime = new \DateTime('now');
-        $client = new Client();
-        $response = $client->createRequest()
-            ->setMethod('GET')
-            ->setUrl($url)
-            ->addHeaders([
-                'user-agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.110 Safari/537.36',
-                'Content-Type: text/html; charset=utf-8'
-            ])
-            ->send();
-        if ($response->isOk) {
-            $startParser = phpQuery::newDocument($response);
-            // Получаю блоки с странами и городами
-            $parsedObject = $startParser->find('#maincontent > div.row.top-departure-index.margin-top > div > div.top-departure > div');
-            $counterForCities = 0;
-            for ($i = 1; $i < count($parsedObject); $i++) {
-                // Получаю блок с h2 в котором название города, последовательность 1,3,5...
-                $parsedDataCountries = $startParser->find('
-                #maincontent > div.row.top-departure-index.margin-top > 
-                div > div.top-departure > div.margin-top.margin-bottom.clearfix:nth-child(' . ($i) . ') h2
-                ');
-                // Получаю текстовое название города
-                $countryCode = pq($parsedDataCountries)->attr('id');
-                // Сохраняю города в БД
-                self::actionAddCountryManually($countryCode, $countryTitle);
-                // Увеличил счетчик для получения блока с городами, последовательность 2,4,6...
-                $i += 1;
-                // Получаю массив с городами
-                $parsedDataCities = $startParser->find('
-                #maincontent > div.row.top-departure-index.margin-top > 
-                div > div.top-departure > div:nth-child(' . $i . ') > div:nth-child(1) > ul > li > a
-            ');
-                // Получаю название города убрав в строке "Попутники з"
-                $prepareCity[] = explode('Попутники з', pq($parsedDataCities)->html());
-                // Удаляю пробелы и пустые элементы массива
-                $city = array_diff(array_map('trim', $prepareCity[$counterForCities]), array(''));
-                $counterForCities++;
-                // Записываю города в БД
-                foreach ($city as $item) {
-                    $countryId = Countries::findOne(['country_title' => $countryTitle]);
-                    $cityId = Cities::findOne(['city_title' => $item]);
-                    if (!isset($cityId->id) and isset($countryId->id)) {
-                        $citiesTable = new Cities();
-                        $citiesTable->country_id = $countryId->id;
-                        $citiesTable->city_title = $item;
-                        $citiesTable->save();
-                    }
-                }
-            }
+        $countryId = Countries::findOne(['country_title' => $countryTitle]);
+        $cityId = Cities::findOne(['city_title' => $cityTitle]);
+        if (!isset($cityId->id) and isset($countryId->id)) {
+            $citiesTable = new Cities();
+            $citiesTable->country_id = $countryId->id;
+            $citiesTable->city_title = $cityTitle;
+            $citiesTable->save();
         }
-
-        $commandEndTime = new \DateTime('now');
-        $timeOfWork = $commandEndTime->getTimestamp() - $commandStartTime->getTimestamp();
-        echo "Import Countries/Cities Job done " . $timeOfWork . "\n";
+        echo "Import City Job done";
         return 0;
     }
 
@@ -222,16 +181,20 @@ class MapController extends Controller
     public function actionRoadTable()
     {
         $commandStartTime = new \DateTime('now');
-
         $client = new Client();
-
-        $citiesListFromDb = Cities::find()->asArray()->all();
         $i = 0;
+        $citiesListFromDb = Cities::find()->asArray()->orderBy('country_id DESC')->all();
         foreach ($citiesListFromDb as $fromCity) {
             unset($citiesListFromDb[$fromCity['city_title']]);
             foreach ($citiesListFromDb as $toCity) {
                 $i++;
                 echo 'С ' . $fromCity['city_title'] . ' В ' . $toCity['city_title'] . ' ' . $i ."\n";
+                if ($i % 387 === 0) {
+                    $i = 0;
+                    echo "\n" . " Waiting..";
+                    sleep(300);
+                    echo "\n" . " Go go go";
+                }
                 $response = $client->createRequest()
                     ->setMethod('GET')
                     ->setUrl('https://public-api.blablacar.com/api/v2/trips?
