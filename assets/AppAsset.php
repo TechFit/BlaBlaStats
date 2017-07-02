@@ -19,9 +19,10 @@ class AppAsset extends AssetBundle
     public $baseUrl = '@web';
     public $css = [
         'css/site.css',
-        'https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.2/css/bulma.css',
     ];
     public $js = [
+        'https://unpkg.com/vue@2.3.4',
+        'js/main.js',
     ];
     public $depends = [
         'yii\web\YiiAsset',

@@ -1,10 +1,11 @@
 <?php
 use yii\widgets\LinkPager;
 /* @var $this yii\web\View */
-$this->title = 'My Yii Application';
+$this->title = 'Статистика BlaBlaCar';
 ?>
 <div class="site-index">
     <div class="box">
+        {{ message }}
         <table class="table">
             <thead>
                 <tr>
@@ -36,10 +37,6 @@ $this->title = 'My Yii Application';
         <?php
         echo LinkPager::widget([
             'pagination' => $tripPages,
-            'options' => [
-                    'class' => 'pagination',
-
-            ],
         ]);
         ?>
     </div>

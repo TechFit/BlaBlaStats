@@ -34,7 +34,3 @@ AppAsset::register($this);
 </body>
 </html>
 <?php $this->endPage() ?>
-
-<!--https://api.vk.com/method/database.getCountries?code=BE,BG,CZ,DK,DE,EE,IE,GR,ES,FR,HR,IT,CY,LV,LT,LU,HU,MT,NL,AT,PL,PT,RO,SI,SK,FI,SE,GB,IS,LI,NO,CH,ME,MK,AL,RS,TR,BA,AM,AZ,BY,MD,GE,UA,RU&fields=bdate&v=5.65-->
-<!--https://api.vk.com/method/database.getCities?country_id=215&fields=bdate&v=5.65-->
-<!--https://public-api.blablacar.com/api/v2/trips?key=e94c9b2fb5be461c9b6dd00bb944a799&fn=Kyiv&tn=Shpola&locale=uk_UA&limit=50&format=JSON-->
