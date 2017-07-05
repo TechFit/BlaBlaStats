@@ -11,4 +11,4 @@ web/assets/*
 config/common.local.php
 vendor/*
 composer.lock
-config/db.php
+/config/db.php

@@ -77,23 +77,26 @@ class SiteController extends Controller
     }
 
     /**
-     * @param $from_city string
      * @return string
      *
      * Find trip from city page
      */
-    public function actionFindTrip($from_city = '')
+    public function actionFindTrip()
     {
-        $form = new GenerateTripsForm();
+        $formTrip = new GenerateTripsForm();
         $tripModel = new GenerateTripModel();
-        $tripList = $tripModel->sendRequestToApi($from_city);
+
+        if ($formTrip->load(Yii::$app->request->post()) && $formTrip->validate()) {
+            $tripList = $tripModel->sendRequestToApi($formTrip->fromCity);
+        }
+
         if (empty($tripList)) {
             $tripList = [];
         }
 
         return $this->render('find-trip', [
             'tripList' => $tripList,
-            'form' => $form,
+            'formTrip' => $formTrip,
         ]);
     }
 }

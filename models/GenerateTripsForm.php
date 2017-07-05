@@ -16,7 +16,7 @@ class GenerateTripsForm extends Model
     {
         return [
             ['fromCity', 'required'],
-            ['fromCity', 'text' => 255],
+            ['fromCity', 'string'],
         ];
     }
 }

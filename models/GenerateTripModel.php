@@ -17,9 +17,8 @@ class GenerateTripModel
     public function sendRequestToApi($from_city)
     {
         $client = new Client();
-        $citiesListFromDb = [0 => ['city_title' => 'lviv'], 1 => ['city_title' => 'odessa']];
+        $citiesListFromDb = Cities::find()->limit(10)->orderBy('country_id DESC')->asArray()->all();
         $responseFromAPI = [];
-
         foreach ($citiesListFromDb as $toCity) {
             $response = $client->createRequest()
                 ->setMethod('GET')
@@ -46,10 +45,10 @@ class GenerateTripModel
                     foreach ($trip['trips'] as $trip) {
                         $listOfPrice[] = $trip['price_without_commission']['value'];
                     }
-                    $responseFromAPI['fn'][] = $from_city;
-                    $responseFromAPI['tn'][] = $toCity['city_title'];
-                    $responseFromAPI['average_price'][] = floor(array_sum($listOfPrice) / $totalTrips);
-                    $responseFromAPI['min_price'][] = $minPrice = min($listOfPrice);
+                    $responseFromAPI[$toCity['city_title']]['fn'] = $from_city;
+                    $responseFromAPI[$toCity['city_title']]['tn'] = $toCity['city_title'];
+                    $responseFromAPI[$toCity['city_title']]['average_price'] = floor(array_sum($listOfPrice) / $totalTrips);
+                    $responseFromAPI[$toCity['city_title']]['min'] = $minPrice = min($listOfPrice);
                 }
             }
         }
