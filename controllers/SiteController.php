@@ -2,6 +2,8 @@
 
 namespace app\controllers;
 
+use app\models\GenerateTripModel;
+use app\models\GenerateTripsForm;
 use app\models\Trips;
 use yii\data\Pagination;
 use Yii;
@@ -71,6 +73,27 @@ class SiteController extends Controller
         return $this->render('index', [
             'tripList' => $tripList,
             'tripPages' => $tripPages,
+        ]);
+    }
+
+    /**
+     * @param $from_city string
+     * @return string
+     *
+     * Find trip from city page
+     */
+    public function actionFindTrip($from_city = '')
+    {
+        $form = new GenerateTripsForm();
+        $tripModel = new GenerateTripModel();
+        $tripList = $tripModel->sendRequestToApi($from_city);
+        if (empty($tripList)) {
+            $tripList = [];
+        }
+
+        return $this->render('find-trip', [
+            'tripList' => $tripList,
+            'form' => $form,
         ]);
     }
 }

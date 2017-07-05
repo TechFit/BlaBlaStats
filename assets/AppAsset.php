@@ -21,7 +21,6 @@ class AppAsset extends AssetBundle
         'css/site.css',
     ];
     public $js = [
-        'https://unpkg.com/vue@2.3.4',
         'js/main.js',
     ];
     public $depends = [

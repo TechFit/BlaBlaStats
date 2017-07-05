@@ -1,0 +1,59 @@
+<?php
+
+
+namespace app\models;
+
+use yii\httpclient\Client;
+
+class GenerateTripModel
+{
+    /** API Key from BlaBlaCar */
+    const API_KEY = 'e94c9b2fb5be461c9b6dd00bb944a799';
+
+    /**
+     * @param $from_city string
+     * @return array
+     */
+    public function sendRequestToApi($from_city)
+    {
+        $client = new Client();
+        $citiesListFromDb = [0 => ['city_title' => 'lviv'], 1 => ['city_title' => 'odessa']];
+        $responseFromAPI = [];
+
+        foreach ($citiesListFromDb as $toCity) {
+            $response = $client->createRequest()
+                ->setMethod('GET')
+                ->setUrl('https://public-api.blablacar.com/api/v2/trips?
+                    ')
+                ->setHeaders([
+                    "accept: application/json",
+                ])
+                ->setData([
+                    'key' => 'e94c9b2fb5be461c9b6dd00bb944a799',
+                    'fn' => $from_city,
+                    'tn' => $toCity['city_title'],
+                    'locale' => 'ru_RU',
+                    'cur' => 'UAH',
+                    'radius' => 1,
+                ])
+                ->send();
+            if ($response->isOk) {
+                $trip = $response->getData();
+                $listOfPrice = [];
+                $totalTrips = count($trip['trips']);
+
+                if (!empty($trip['trips'])) {
+                    foreach ($trip['trips'] as $trip) {
+                        $listOfPrice[] = $trip['price_without_commission']['value'];
+                    }
+                    $responseFromAPI['fn'][] = $from_city;
+                    $responseFromAPI['tn'][] = $toCity['city_title'];
+                    $responseFromAPI['average_price'][] = floor(array_sum($listOfPrice) / $totalTrips);
+                    $responseFromAPI['min_price'][] = $minPrice = min($listOfPrice);
+                }
+            }
+        }
+
+        return $responseFromAPI;
+    }
+}

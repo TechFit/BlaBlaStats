@@ -5,7 +5,6 @@ $this->title = 'Статистика BlaBlaCar';
 ?>
 <div class="site-index">
     <div class="box">
-        {{ message }}
         <table class="table">
             <thead>
                 <tr>

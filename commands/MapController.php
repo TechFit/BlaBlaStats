@@ -22,6 +22,8 @@ use yii\httpclient\Client;
  */
 class MapController extends Controller
 {
+    const CITY_COUNT = 387;
+
     /**
      * @param $title string
      * @param $code  integer
@@ -175,8 +177,6 @@ class MapController extends Controller
 
     /*
      * Get statistic between cities
-     * On 400 stopped
-     * Add a lot of users
      */
     public function actionRoadTable()
     {
@@ -189,7 +189,7 @@ class MapController extends Controller
             foreach ($citiesListFromDb as $toCity) {
                 $i++;
                 echo 'С ' . $fromCity['city_title'] . ' В ' . $toCity['city_title'] . ' ' . $i ."\n";
-                if ($i % 387 === 0) {
+                if ($i % self::CITY_COUNT === 0) {
                     $i = 0;
                     echo "\n" . " Waiting..";
                     sleep(300);
