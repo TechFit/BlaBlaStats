@@ -17,7 +17,7 @@ class GenerateTripModel
     public function sendRequestToApi($from_city)
     {
         $client = new Client();
-        $citiesListFromDb = Cities::find()->limit(10)->orderBy('country_id DESC')->asArray()->all();
+        $citiesListFromDb = Cities::find()->limit(50)->orderBy('country_id DESC')->asArray()->all();
         $responseFromAPI = [];
         foreach ($citiesListFromDb as $toCity) {
             $response = $client->createRequest()
